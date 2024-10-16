@@ -1015,6 +1015,8 @@ static void uvc_function_unbind(struct usb_configuration *c,
 		connected = uvc->func_connected;
 	}
 
+	kthread_cancel_work_sync(&video->hw_submit);
+
 	if (video->async_wq)
 		destroy_workqueue(video->async_wq);
 

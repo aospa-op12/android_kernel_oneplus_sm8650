@@ -330,15 +330,11 @@
 
 		msi-map = <0x0 &gic_its 0x1480 0x1>,
 			<0x100 &gic_its 0x1481 0x1>; /* 32 event IDs */
-
-		perst-gpio = <&tlmm 97 0>;
 		wake-gpio = <&tlmm 99 0>;
 		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&pcie1_perst_default
-				&pcie1_clkreq_default
+		pinctrl-0 = <&pcie1_clkreq_default
 				&pcie1_wake_default>;
-		pinctrl-1 = <&pcie1_perst_default
-				&pcie1_clkreq_sleep
+		pinctrl-1 = <&pcie1_clkreq_sleep
 				&pcie1_wake_default>;
 
 		gdsc-core-vdd-supply = <&gcc_pcie_1_gdsc>;

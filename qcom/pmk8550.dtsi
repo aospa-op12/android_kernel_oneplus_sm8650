@@ -15,7 +15,7 @@
 	interrupt-controller;
 	#interrupt-cells = <4>;
 
-	qcom,pmk8550@0 {
+       pmk8550: qcom,pmk8550@0 {
 		compatible = "qcom,spmi-pmic";
 		reg = <0x0 SPMI_USID>;
 		#address-cells = <1>;
@@ -160,7 +160,7 @@
 			resin {
 				compatible = "qcom,pmk8350-resin";
 				interrupts = <0x0 0x13 0x6 IRQ_TYPE_EDGE_BOTH>;
-				linux,code = <KEY_VOLUMEDOWN>;
+				linux,code = <KEY_VOLUMEUP>;
 			};
 		};
 

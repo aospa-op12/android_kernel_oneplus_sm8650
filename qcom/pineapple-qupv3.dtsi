@@ -817,8 +817,12 @@
 			<&gem_noc MASTER_APPSS_PROC &config_noc SLAVE_QUP_2>,
 			<&aggre2_noc MASTER_QUP_2 &mc_virt  SLAVE_EBI1>;
 			pinctrl-names = "default", "sleep";
+			/*#ifdef OPLUS_FEATURE_SENSOR_IR */
+			/*
 			pinctrl-0 = <&qupv3_se11_spi_mosi_active>, <&qupv3_se11_spi_miso_active>,
 				<&qupv3_se11_spi_clk_active>, <&qupv3_se11_spi_cs_active>;
+			*/
+			pinctrl-0 = <&qupv3_se11_spi_mosi_active>;
 			pinctrl-1 = <&qupv3_se11_spi_sleep>;
 			dmas = <&gpi_dma2 0 3 1 64 0>,
 				<&gpi_dma2 1 3 1 64 0>;

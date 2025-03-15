@@ -36,6 +36,7 @@
 				pins = "gpio30", "gpio31";
 				drive-strength = <2>;
 				bias-pull-down;
+				output-low;
 			};
 		};
 	};
@@ -108,19 +109,6 @@
 	};
 
 	pcie1 {
-		pcie1_perst_default: pcie1_perst_default {
-			mux {
-				pins = "gpio97";
-				function = "gpio";
-			};
-
-			config {
-				pins = "gpio97";
-				drive-strength = <2>;
-				bias-pull-down;
-			};
-		};
-
 		pcie1_clkreq_default: pcie1_clkreq_default {
 			mux {
 				pins = "gpio98";
@@ -1858,14 +1846,22 @@
 
 		qupv3_se11_spi_sleep: qupv3_se11_spi_sleep {
 			mux {
+				/*#ifdef OPLUS_FEATURE_SENSOR_IR */
+				/*
 				pins = "gpio12", "gpio13",
 					"gpio14", "gpio15";
+				*/
+				pins = "gpio13";
 				function = "gpio";
 			};
 
 			config {
+                                /*#ifdef OPLUS_FEATURE_SENSOR_IR */
+                                /*
 				pins = "gpio12", "gpio13",
 					"gpio14", "gpio15";
+                                */
+				pins = "gpio13";
 				drive-strength = <2>;
 				bias-disable;
 			};
@@ -2626,6 +2622,7 @@
 				pins = "gpio206";
 				drive-strength = <2>;
 				bias-pull-up;
+				qcom,apps;
 			};
 		};
 
@@ -2639,6 +2636,7 @@
 				pins = "gpio207";
 				drive-strength = <2>;
 				bias-pull-up;
+				qcom,apps;
 			};
 		};
 
@@ -2651,6 +2649,7 @@
 			config {
 				pins = "gpio206", "gpio207";
 				drive-strength = <2>;
+				qcom,remote;
 			};
 		};
 	};

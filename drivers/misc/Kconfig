@@ -587,6 +587,18 @@ config LONTIUM_LT7911UXC
 	  to a drain-loop work queue that reads video/audio metadata
 	  over the camera CCI bus and notifies userspace via uevents.
 
+#ifdef OPLUS_FEATURE_CHG_BASIC
+config HAPTIC_FEEDBACK
+	tristate "Haptic driver feedback"
+	help
+	  This option enables support for Haptic Driver Feedback.
+
+config OPLUS_VIBRATOR_GKI_ENABLE
+	tristate "vibrator compatibility"
+	help
+	  This option enables support for vibrator compatibility.
+#endif
+
 source "drivers/misc/rtimd-i2c/Kconfig"
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
@@ -608,4 +620,8 @@ source "drivers/misc/uacce/Kconfig"
 source "drivers/misc/pvpanic/Kconfig"
 source "drivers/misc/mchp_pci1xxxx/Kconfig"
 source "drivers/misc/vd628x/Kconfig"
+source "drivers/misc/vibrator/aw8697_haptic/Kconfig"
+source "drivers/misc/vibrator/si_haptic/Kconfig"
+source "drivers/misc/oplus_power_notifier/Kconfig"
+source "drivers/misc/vibrator/oplus_haptic/Kconfig"
 endmenu

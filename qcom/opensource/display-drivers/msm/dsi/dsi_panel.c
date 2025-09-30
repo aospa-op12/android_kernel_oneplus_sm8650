@@ -83,6 +83,8 @@
 #define DSI_PANEL_I2C_MIN_CMD_SIZE 3 /* slave, delay, len */
 
 #ifdef OPLUS_FEATURE_DISPLAY
+bool caihong_panel_flag = false;
+EXPORT_SYMBOL(caihong_panel_flag);
 static bool g_oplus_forced_power_down = false;
 #endif /* OPLUS_FEATURE_DISPLAY */
 
@@ -1078,7 +1080,9 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 		return 0;
 
 #if IS_ENABLED(CONFIG_OPLUS_POWER_NOTIFIER)
-	if (g_oplus_forced_power_down) {
+	if (!strcmp(panel->name, "Dual dsi csot nt36532 video mode panel with DSC")
+			|| !strcmp(panel->name, "Dual dsi nt36523w video mode panel with DSC")
+            || g_oplus_forced_power_down) {
 		if (panel->pon_status == OPLUS_PON_KPDPWR_RESIN_BARK) {
 			DSI_ERR("%s: %d: pon_status is OPLUS_PON_KPDPWR_RESIN_BARK, return\n", __func__, __LINE__);
 			return 0;
@@ -5039,8 +5043,15 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 			panel->name = "AA584 P 7 A0001 dsc cmd mode panel";
 		}
 	}
+	if (is_project(23926) || is_project(23927) || is_project(23976) || is_project(23978)) {
+		if (!strcmp(panel->name, "Dual dsi csot nt36532 video mode panel with DSC")
+			|| !strcmp(panel->name, "Dual dsi nt36523w video mode panel with DSC")) {
+			DSI_INFO("caihong_panel_flag: true\n");
+			caihong_panel_flag = true;
+		}
+	}
 #if IS_ENABLED(CONFIG_OPLUS_POWER_NOTIFIER)
-	if (g_oplus_forced_power_down) {
+	if (caihong_panel_flag || g_oplus_forced_power_down) {
 		DSI_INFO("dongfeng_panel_flag: true\n");
 		panel->oplus_power_notify_client.notifier_call = oplus_power_notifier_callback;
 		rc = oplus_power_notifier_register_client(&panel->oplus_power_notify_client);

@@ -523,6 +523,8 @@
 		oplus,smooth_switch;
 		oplus,reserve_chg_soc = <3>;
 		oplus,reserve_dis_soc = <3>;
+
+		oplus_spec,batt_full_time = <300>;
 	};
 
 	oplus_monitor: oplus,monitor {
@@ -1388,13 +1390,13 @@
 		compatible = "oplus,cpa";
 		/* format: <protocol_type power_w> */
 		oplus,protocol_list = <CHG_PROTOCOL_UFCS  33
-				       CHG_PROTOCOL_PD   18
 				       CHG_PROTOCOL_VOOC 100
-				       CHG_PROTOCOL_QC   18
-				       CHG_PROTOCOL_PPS  33>;
+				       CHG_PROTOCOL_PPS  33
+				       CHG_PROTOCOL_PD   18
+				       CHG_PROTOCOL_QC   18>;
 		oplus,default_protocol_list = <CHG_PROTOCOL_UFCS
-					       CHG_PROTOCOL_PD
-					       CHG_PROTOCOL_VOOC>;
+					       CHG_PROTOCOL_VOOC
+					       CHG_PROTOCOL_PD>;
 	};
 
 	oplus_ufcs_virtual_cp: oplus,ufcs_virtual_cp {

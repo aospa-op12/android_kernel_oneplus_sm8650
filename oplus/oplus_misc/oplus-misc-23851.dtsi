@@ -64,11 +64,9 @@
 };
 
 &pm8550b_bcl {
-	compatible = "qcom,bcl-v5";
 	bcl,support_track;
 };
 
 &pm8550_bcl {
-	compatible = "qcom,bcl-v5";
 	bcl,support_track;
 };

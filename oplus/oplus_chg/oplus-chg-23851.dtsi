@@ -140,6 +140,8 @@
 					OPLUS_IC_FUNC_SET_TYPEC_MODE
 					OPLUS_IC_FUNC_BUCK_GET_USB_BTB_TEMP
 					OPLUS_IC_FUNC_BUCK_GET_BATT_BTB_TEMP
+					OPLUS_IC_FUNC_BUCK_GET_USB_AICL_ENHANCE
+					OPLUS_IC_FUNC_BUCK_SET_AICL_POINT
 				>;
 				virqs = <
 					OPLUS_IC_VIRQ_ERR
@@ -247,6 +249,11 @@
 				OPLUS_IC_FUNC_GAUGE_SET_LAST_CC
 				OPLUS_IC_FUNC_GAUGE_GET_LAST_CC
 				OPLUS_IC_FUNC_GAUGE_GET_CHEM_ID
+				OPLUS_IC_FUNC_GAUGE_GET_GAUGE_CAR_C
+				OPLUS_IC_FUNC_GAUGE_GET_DEC_FG_TYPE
+				OPLUS_IC_FUNC_GAUGE_GET_DEC_CV_SOH
+				OPLUS_IC_FUNC_GAUGE_SET_VCT
+				OPLUS_IC_FUNC_GAUGE_GET_VCT
 			>;
 			virqs = <
 				OPLUS_IC_VIRQ_ERR
@@ -351,6 +358,9 @@
 
 	oplus_chg_comm: oplus,comm {
 		compatible = "oplus,common-charge";
+		oplus_spec,dec_step = <20>;
+		oplus_spec,dec-vol-cc-full-thr = <0 400 600 800 1000 1200>;
+		oplus_spec,dec-vol-fv-full-mv = <0 20 20 40 40 40>;
 		oplus_spec,batt-them-thr = <(-100) 0 50 120 160 350 450 530>;
 		oplus_spec,iterm-ma = <303>;
 		oplus_spec,removed_bat_decidegc = <390>;
@@ -398,6 +408,8 @@
 
 		oplus,smooth_switch;
 		oplus,reserve_chg_soc = <2>;
+
+		oplus_spec,batt_full_time = <300>;
 	};
 
 	oplus_vooc: oplus,vooc {
@@ -512,11 +524,12 @@
 		compatible = "oplus,monitor";
 		oplus,topic-update-interval = <60000>;
 
-		track,fast_chg_break_t_thd = <1400>;
+		track,fast_chg_break_t_thd = <2500>;
 		track,general_chg_break_t_thd = <300>;
 		track,voocphy_type = <TRACK_AP_DUAL_CP_VOOCPHY>;
 		track,wired_max_power = <80000>;
 		track,wired_fast_chg_scheme = <TRACK_WIRED_SCHEME_SINGLE_60W_67W>;
+		track,track_ver = <TRACK_VER_4_0>;
 
 		track,gauge_status_ctrl;
 		track,nominal_qmax1 = <6122>;
@@ -1551,6 +1564,7 @@
 	pinctrl-0 = <&svooc_mos_btb_therm_default>,
 			<&batt_conn_therm_gpio_default>;
 	pinctrl-1 = <&subboard_temp_gpio_default>;
+	oplus,usb_aicl_enhance;
 
 	oplus,voocphy_support;
 	qcom,otg_boost_src = <0>; /* 0:plat_pmic 1:external */

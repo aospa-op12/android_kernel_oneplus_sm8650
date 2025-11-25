@@ -515,7 +515,7 @@
 			<RPMH_REGULATOR_MODE_LPM
 			RPMH_REGULATOR_MODE_HPM>;
 		qcom,mode-threshold-currents = <0 30000>;
-		proxy-supply = <&pmxr2230_l8>;
+		//proxy-supply = <&pmxr2230_l8>;
 
 		L8B:
 		pmxr2230_l8: regulator-pmxr2230-l8 {
@@ -722,7 +722,7 @@
 			<RPMH_REGULATOR_MODE_LPM
 			RPMH_REGULATOR_MODE_HPM>;
 		qcom,mode-threshold-currents = <0 10000>;
-		proxy-supply = <&pmxr2230_l19>;
+		//proxy-supply = <&pmxr2230_l19>;
 
 		L19B:
 		pmxr2230_l19: regulator-pmxr2230-l19 {

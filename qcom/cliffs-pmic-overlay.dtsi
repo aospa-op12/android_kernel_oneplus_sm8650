@@ -428,3 +428,7 @@
 		pinctrl-0 = <&display_panel_avdd_default>;
 	};
 };
+
+&gcc {
+	qcom,critical-devices = <&qupv3_se7_i2c>;
+};

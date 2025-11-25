@@ -142,6 +142,8 @@
 					OPLUS_IC_FUNC_SET_TYPEC_MODE
 					OPLUS_IC_FUNC_BUCK_GET_USB_BTB_TEMP
 					OPLUS_IC_FUNC_BUCK_GET_BATT_BTB_TEMP
+					OPLUS_IC_FUNC_BUCK_GET_USB_AICL_ENHANCE
+					OPLUS_IC_FUNC_BUCK_SET_AICL_POINT
 				>;
 				virqs = <
 					OPLUS_IC_VIRQ_ERR
@@ -299,8 +301,8 @@
 			0 1200 4000 4000 4000 4000 2200 0	/* OPLUS_WIRED_CHG_MODE_PD */
 		>;
 
-		oplus_spec,cool_down_pdqc_vol_mv = <9000 9000 9000>;
-		oplus_spec,cool_down_pdqc_curr_ma = <1200 1500 2000>;
+		oplus_spec,cool_down_pdqc_vol_mv = <5000 5000 5000 9000 9000>;
+		oplus_spec,cool_down_pdqc_curr_ma = <1200 1500 2000 1500 2000>;
 		oplus_spec,cool_down_vooc_curr_ma = <1200 1500 2000 2500 3000 3000>;
 		oplus_spec,cool_down_normal_curr_ma = <1200 1500 2000>;
 
@@ -363,6 +365,8 @@
 		oplus,gauge_stuck_time = <50>;
 		oplus,smooth_switch;
 		oplus,reserve_chg_soc = <3>;
+
+		oplus_spec,batt_full_time = <180>;
 	};
 
 	oplus_monitor: oplus,monitor {
@@ -859,6 +863,7 @@
 	pinctrl-names = "subboard_temp_gpio_default", "btb_temp_gpio_default";
 	pinctrl-0 = <&subboard_temp_gpio_default>;
 	pinctrl-1 = <&btb_temp_gpio_default>;
+	oplus,usb_aicl_enhance;
 
 	qcom,otg_boost_src = <0>;//0:plat_pmic 1:external
 	oplus,batt_num = <1>;

@@ -31,6 +31,11 @@ OPLUS_PINEAPPLE_BOARDS += \
                           giulia-23867-pineapple-overlay-T0.dtbo\
                           giulia-23867-pineapple-overlay-T0-EU.dtbo\
                           giulia-23867-pineapple-overlay.dtbo
+else ifeq ($(CONFIG_LEXUS_DTB),y)
+OPLUS_PINEAPPLE_BOARDS += \
+                          lexus-24881-cliffs-overlay.dtbo\
+                          lexus-24882-cliffs-overlay.dtbo\
+                          lexus-24882-EU-cliffs-overlay.dtbo
 endif
 
 dtb-y += $(OPLUS_PINEAPPLE_BOARDS) $(PINEAPPLE_BASE_DTB) $(PINEAPPLE_APQ_BASE_DTB)

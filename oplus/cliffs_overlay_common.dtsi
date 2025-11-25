@@ -35,6 +35,9 @@
         compatible = "oplus,shell-temp";
     };
     //#endif /* OPLUS_FEATURE_THERMAL_HORAE */
+	oplus_kernel_state_monitor {
+		compatible = "oplus,kernel_state_monitor";
+	};
 };
 
 &reserved_memory {

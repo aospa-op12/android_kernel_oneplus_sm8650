@@ -62,6 +62,10 @@ dtbo-y += st/volcano6i-idp-wcd9395-brahma-overlay-nfc.dtbo \
           st/volcano6i-mtp-STSafe320-brahma-overlay.dtbo
 endif
 
+#PLUS_DTS_OVERLAY start
+dtbo-$(CONFIG_LEXUS_DTB) += oplus/lexus-24881-nfc-cliffs-overlay.dtbo
+#PLUS_DTS_OVERLAY end
+
 always-y	:= $(dtb-y) $(dtbo-y)
 subdir-y	:= $(dts-dirs)
 clean-files	:= *.dtb *.dtbo

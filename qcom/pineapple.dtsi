@@ -3492,6 +3492,8 @@
 		reg = <0x0 0x9de80000 0x0 0x80000>;
 	};
 
+	/* #ifdef OPLUS_SENSOR_FEATURE
+*/
 	/*  reg = <0x0 0x9df00000 0x0 0x4080000>;  */
 	adsp_slpi_mem: adspslpi_region@9df00000 {
 		no-map;

@@ -176,6 +176,8 @@
 					OPLUS_IC_FUNC_BUCK_GET_USB_BTB_TEMP
 					OPLUS_IC_FUNC_BUCK_GET_BATT_BTB_TEMP
 					OPLUS_IC_FUNC_BUCK_GET_TYPEC_STATE
+					OPLUS_IC_FUNC_BUCK_GET_USB_AICL_ENHANCE
+					OPLUS_IC_FUNC_BUCK_SET_AICL_POINT
 				>;
 				virqs = <
 					OPLUS_IC_VIRQ_ERR
@@ -361,6 +363,7 @@
 	pinctrl-4 = <&subboard_temp_gpio_default>;
 	pinctrl-5 = <&wrx_otg_en_active>;
 	pinctrl-6 = <&wrx_otg_en_sleep>;
+	oplus,usb_aicl_enhance;
 
 };
 
@@ -524,13 +527,15 @@
 		oplus,smooth_switch;
 		oplus,reserve_chg_soc = <3>;
 		oplus,reserve_dis_soc = <3>;
+
+		oplus_spec,batt_full_time = <300>;
 	};
 
 	oplus_monitor: oplus,monitor {
 		compatible = "oplus,monitor";
 		oplus,topic-update-interval = <60000>;
 
-		track,fast_chg_break_t_thd = <1400>;
+		track,fast_chg_break_t_thd = <2500>;
 		track,general_chg_break_t_thd = <300>;
 		track,voocphy_type = <1>;
 		track,wired_max_power = <100000>;
@@ -548,6 +553,7 @@
 		oplus,chg_into_liquid_cc_disconnect = <10>;
 		oplus,chg_into_liquid_total_time = <5000>;
 		oplus,chg_into_liquid_max_interval_time = <700>;
+		track,track_ver = <TRACK_VER_4_0>;
 	};
 
 	oplus_vooc: oplus,vooc {
@@ -854,6 +860,7 @@
 		oplus,plc_soc = <90>;
 		oplus,plc_strategy-data = <&buck_simple_strategy>;
 		oplus,plc_strategy-names = "default";
+		oplus,plc_support = <CHG_PROTOCOL_UFCS>;
 
 		oplus_ufcs_step_strategy: oplus_ufcs_step_strategy {
 			oplus,strategy_type = <PLC_STRATEGY_STEP>;
@@ -1430,13 +1437,13 @@
 		compatible = "oplus,cpa";
 		/* format: <protocol_type power_w> */
 		oplus,protocol_list = <CHG_PROTOCOL_UFCS  33
-				       CHG_PROTOCOL_PD   18
 				       CHG_PROTOCOL_VOOC 100
-				       CHG_PROTOCOL_QC   18
-				       CHG_PROTOCOL_PPS  33>;
+				       CHG_PROTOCOL_PPS  33
+				       CHG_PROTOCOL_PD   18
+				       CHG_PROTOCOL_QC   18>;
 		oplus,default_protocol_list = <CHG_PROTOCOL_UFCS
-					       CHG_PROTOCOL_PD
-					       CHG_PROTOCOL_VOOC>;
+					       CHG_PROTOCOL_VOOC
+					       CHG_PROTOCOL_PD>;
 	};
 
 	oplus_ufcs_virtual_cp: oplus,ufcs_virtual_cp {

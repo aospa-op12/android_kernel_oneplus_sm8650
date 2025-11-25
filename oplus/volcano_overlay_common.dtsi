@@ -18,4 +18,8 @@
         oplus,sec_override1_reg = <0x221C8314>;
         oplus,override1_en_value = <0x1>;
     };
+
+    oplus,blk-mq {
+	kblockd_ux_unbound_enable = "y";
+    };
 };

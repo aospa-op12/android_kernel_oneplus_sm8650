@@ -341,7 +341,7 @@ bool oplus_panel_switch_vid_mode_compenstate_post(struct dsi_panel *panel, struc
 
 	if (dsi_cmd_vid_switch != -1) {
 		mutex_lock(&panel->panel_lock);
-		rc = dsi_panel_tx_cmd_set(panel, dsi_cmd_vid_switch);
+		rc = dsi_panel_tx_cmd_set(panel, dsi_cmd_vid_switch, false);
 		if (rc) {
 			LCD_ERR("[%s] failed to send fps compenstate cmds, rc=%d\n",
 				panel->name, rc);

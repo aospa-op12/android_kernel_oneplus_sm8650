@@ -106,6 +106,10 @@ _platform_map = {
         "dtbo_list": [
             {"name": "audi-23803-cliffs-overlay.dtbo"},
             {"name": "audi-23865-cliffs-overlay.dtbo"},
+            {"name": "bale-23609-cliffs-overlay.dtbo"},
+            {"name": "bale-23622-cliffs-overlay.dtbo"},
+            {"name": "bale-23718-cliffs-overlay.dtbo"},
+            {"name": "bale-24687-cliffs-overlay.dtbo"},
             {"name": "avalon-24211-cliffs-overlay.dtbo"},
             {"name": "lexus-24881-cliffs-overlay.dtbo"},
             {"name": "lexus-24882-cliffs-overlay.dtbo"},

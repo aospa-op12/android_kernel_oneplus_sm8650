@@ -1104,7 +1104,7 @@ static bool is_prj_support_region_id(void) {
 		return true;
 	} else if (project_id == 24882 || project_id == 24881) {
 		return true;
-	} else if (project_id == 25861) {
+	} else if (project_id == 25861 || project_id == 25863) {
 		return true;
 	}
 	return false;

@@ -36,6 +36,9 @@ OPLUS_PINEAPPLE_BOARDS += \
                           lexus-24881-cliffs-overlay.dtbo\
                           lexus-24882-cliffs-overlay.dtbo\
                           lexus-24882-EU-cliffs-overlay.dtbo
+else ifeq ($(CONFIG_PRADO_DTB),y)
+OPLUS_PINEAPPLE_BOARDS += \
+                          prado-25811-volcano-overlay.dtbo
 endif
 
 dtb-y += $(OPLUS_PINEAPPLE_BOARDS) $(PINEAPPLE_BASE_DTB) $(PINEAPPLE_APQ_BASE_DTB)

@@ -40,3 +40,7 @@ dtbo-$(CONFIG_ARCH_VOLCANO)     += volcano-camera-qrd.dtbo
 dtbo-$(CONFIG_ARCH_VOLCANO)     += volcano-camera-sensor-mtp.dtbo
 dtbo-$(CONFIG_ARCH_VOLCANO)     += volcano-camera-sensor-idp.dtbo
 dtbo-$(CONFIG_ARCH_VOLCANO)     += volcano-camera-sensor-qrd.dtbo
+
+#OPLUS_DTS_OVERLAY start
+dtbo-$(CONFIG_PRADO_DTB)    += oplus/prado-camera-overlay.dtbo
+#OPLUS_DTS_OVERLAY end

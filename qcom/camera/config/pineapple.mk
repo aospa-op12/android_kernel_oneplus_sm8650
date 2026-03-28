@@ -22,11 +22,11 @@ dtbo-$(CONFIG_GIULIAC_DTB) += oplus/giuliaC-camera-overlay.dtbo
 
 dtbo-$(CONFIG_ARCH_CLIFFS)    += cliffs-camera.dtbo
 #OPLUS_DTS_OVERLAY start
-dtbo-$(CONFIG_AUDI_DTB)    += oplus/audi-camera-overlay.dtbo \
+dtbo-$(CONFIG_AUDI_DTB)    += oplus/audi-camera-overlay.dtbo
 
-dtbo-$(CONFIG_AVALON_DTB)    += oplus/avalon-camera-overlay.dtbo \
+dtbo-$(CONFIG_AVALON_DTB)    += oplus/avalon-camera-overlay.dtbo
 
-dtbo-$(CONFIG_LEXUS_DTB)    += oplus/lexus-camera-overlay.dtbo \
+dtbo-$(CONFIG_LEXUS_DTB)    += oplus/lexus-camera-overlay.dtbo
 
 #OPLUS_DTS_OVERLAY end
 ifneq ($(CONFIG_OPLUS_DEVICE_DTBS), y)

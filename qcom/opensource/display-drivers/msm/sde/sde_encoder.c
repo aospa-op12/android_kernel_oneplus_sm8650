@@ -5652,9 +5652,8 @@ int oplus_apollo_delay_for_ts_rsc(struct drm_encoder *drm_enc)
 	return 0;
 }
 
-
-static int busy_counter = 1;
-static bool thread_busy_met = false;
+static int g_busy_counter = 1;
+static bool g_thread_busy_met = false;
 wait_queue_head_t sync_backlight_queue;
 int oplus_sync_backlight_vid_thread(void *data)
 {
@@ -5677,21 +5676,21 @@ int oplus_sync_backlight_vid_thread(void *data)
 		brightness = sde_connector_get_property(sde_conn->base.state, CONNECTOR_PROP_BRIGHTNESS);
 
 		if(display->panel->power_mode == SDE_MODE_DPMS_ON || display->panel->power_mode == SDE_MODE_DPMS_LP1 || display->panel->power_mode == SDE_MODE_DPMS_LP2) {
-			if((sde_conn->bl_need_sync || thread_busy_met) && (sync_brightness || brightness)) {
+			if ((sde_conn->bl_need_sync || g_thread_busy_met) && (sync_brightness || brightness)) {
 				ret = oplus_set_brightness(sde_conn->bl_device, sync_brightness ? sync_brightness : brightness);
 				dsi_cmd_set_type_status = 0;
-				if(thread_busy_met) {
-					busy_counter--;
-					if(busy_counter == 0) {
-						busy_counter = 1;
-						thread_busy_met = false;
+				if (g_thread_busy_met) {
+					g_busy_counter--;
+					if (g_busy_counter == 0) {
+						g_busy_counter = 1;
+						g_thread_busy_met = false;
 					}
 					pr_err("reset cmd_thread state to idle, retry set backlight[%d].\n", sync_brightness ? sync_brightness : brightness);
-					pr_err("thread_busy_met[%d], busy_counter[%d].\n", thread_busy_met, busy_counter);
+					pr_err("g_thread_busy_met[%d], g_busy_counter[%d].\n", g_thread_busy_met, g_busy_counter);
 				}
 			} else if (display->panel->oplus_priv.dsi_cmd_need_to_package) {
 				mutex_lock(&display->panel->panel_lock);
-				pr_err("Send DSI_CMD_DEFAULT_SWITCH_PAGE to batch dsi_cmd.\n");
+				pr_debug("Send DSI_CMD_DEFAULT_SWITCH_PAGE to batch dsi_cmd.\n");
 				ret = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_DEFAULT_SWITCH_PAGE, false);
 				mutex_unlock(&display->panel->panel_lock);
 				dsi_cmd_set_type_status = 0;
@@ -5735,17 +5734,16 @@ int __oplus_vid_sync_backlight_thread_ctl(bool enable)
 
 				sp.sched_priority = 16;
 				sched_setscheduler(sync_backlight_thread, SCHED_FIFO, &sp);
-			} else if ((sde_conn->bl_need_sync || display->panel->oplus_priv.dsi_cmd_need_to_package || thread_busy_met) && (last_refresh_rate == 120 || last_refresh_rate == 144 || last_refresh_rate == 165 || last_refresh_rate == 30)) {
-				cmd_thread_state = READ_ONCE(sync_backlight_thread->__state);
+			} else if ((sde_conn->bl_need_sync || display->panel->oplus_priv.dsi_cmd_need_to_package || g_thread_busy_met) && (last_refresh_rate == 120 || last_refresh_rate == 144 || last_refresh_rate == 165 || last_refresh_rate == 30)) {
 				if (cmd_thread_state & TASK_INTERRUPTIBLE) {
 					atomic_set(&sde_conn->dsi_cmd_need_update, true);
 					wake_up_interruptible(&sync_backlight_queue);
 				} else {
-					if (busy_counter < 3) {
-						busy_counter++;
-						thread_busy_met = true;
+					if (g_busy_counter < 3 && sde_conn->bl_need_sync) {
+						g_busy_counter++;
+						g_thread_busy_met = true;
 					}
-					pr_err("cmd_thread_busy. update cmd in next frame.busy_counter[%d]\n", busy_counter);
+					pr_err("cmd_thread_busy. update cmd in next frame.g_busy_counter[%d]\n", g_busy_counter);
 				}
 			}
 		} else {
@@ -5809,7 +5807,7 @@ int oplus_sync_panel_brightness_video(struct drm_encoder *drm_enc)
 		brightness = sde_connector_get_property(sde_conn->base.state, CONNECTOR_PROP_BRIGHTNESS);
 		if(display->panel->power_mode == SDE_MODE_DPMS_ON || display->panel->power_mode == SDE_MODE_DPMS_LP1 ||
 			display->panel->power_mode == SDE_MODE_DPMS_LP2) {
-			if(sde_conn->bl_need_sync && (sync_brightness || brightness)) {
+			if (sde_conn->bl_need_sync && (sync_brightness || brightness)) {
 				atomic_set(&sde_conn->dsi_cmd_need_update, true);
 
 				ret = oplus_set_brightness(sde_conn->bl_device, sync_brightness ? sync_brightness : brightness);
@@ -5820,7 +5818,7 @@ int oplus_sync_panel_brightness_video(struct drm_encoder *drm_enc)
 				}
 			} else if (display->panel->oplus_priv.dsi_cmd_need_to_package) {
 					mutex_lock(&display->panel->panel_lock);
-					pr_err("Send DSI_CMD_DEFAULT_SWITCH_PAGE to batch dsi_cmd.\n");
+					pr_debug("Send DSI_CMD_DEFAULT_SWITCH_PAGE to batch dsi_cmd.\n");
 					ret = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_DEFAULT_SWITCH_PAGE, false);
 					mutex_unlock(&display->panel->panel_lock);
 					dsi_cmd_set_type_status = 0;

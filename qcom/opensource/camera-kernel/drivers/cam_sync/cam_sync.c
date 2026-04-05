@@ -26,10 +26,12 @@
 #include <linux/sched.h>
 #include <linux/kthread.h>
 
+#ifdef OPLUS_FEATURE_SCHED_ASSIST
 extern void oplus_set_ux_state_lock(struct task_struct *t, int ux_state, int inherit_type, bool need_lock_rq);
 #define SA_TYPE_LIGHT				(1 << 0)
 #define SA_TYPE_HEAVY				(1 << 1)
 #define SA_TYPE_ANIMATOR			(1 << 2)
+#endif
 #endif
 struct sync_device *sync_dev;
 
@@ -204,8 +206,10 @@ int cam_sync_register_callback(sync_callback cb_func,
 			if(!IS_ERR_OR_NULL(sync_dev->scheduler_worker)){
 				kthread_init_work(&sync_cb->cb_dispatch_work_kthread,
 					cam_sync_util_cb_dispatch_kthread_work);
+#ifdef OPLUS_FEATURE_SCHED_ASSIST
 				oplus_set_ux_state_lock(sync_dev->scheduler_worker->task,
 					SA_TYPE_LIGHT, -1, true);
+#endif
 			} else{
 				INIT_WORK(&sync_cb->cb_dispatch_work,
 					cam_sync_util_cb_dispatch);
@@ -244,8 +248,10 @@ int cam_sync_register_callback(sync_callback cb_func,
 	if(!IS_ERR_OR_NULL(sync_dev->scheduler_worker)){
 		kthread_init_work(&sync_cb->cb_dispatch_work_kthread,
 						cam_sync_util_cb_dispatch_kthread_work);
+#ifdef OPLUS_FEATURE_SCHED_ASSIST
 		oplus_set_ux_state_lock(sync_dev->scheduler_worker->task,
 			SA_TYPE_LIGHT, -1, true);
+#endif
 	} else{
 		INIT_WORK(&sync_cb->cb_dispatch_work, cam_sync_util_cb_dispatch);
 	}

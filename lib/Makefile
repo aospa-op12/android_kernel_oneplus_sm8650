@@ -404,6 +404,7 @@ quiet_cmd_test_fortify = TEST    $@
       cmd_test_fortify = $(CONFIG_SHELL) $(srctree)/scripts/test_fortify.sh \
 			$< $@ "$(NM)" $(CC) $(c_flags) \
 			$(call cc-disable-warning,fortify-source) \
+			$(call cc-disable-warning,stringop-overread) \
 			-DKBUILD_EXTRA_WARN1
 
 targets += $(TEST_FORTIFY_LOGS)

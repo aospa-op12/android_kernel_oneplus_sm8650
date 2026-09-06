@@ -2040,13 +2040,35 @@ retry:
 
 	if ((data[0] == CMD_SET_DYNAMIC_CONFIG) && (payload_length == 3)) {
 		if (data[3] == DC_GESTURE_TYPE_ENABLE) {
+			unsigned short value = (unsigned short)syna_pal_le2_to_uint(&data[4]);
+
+			/* touchDaemon clears this after suspend, but the wake sensors need
+			 * the previously enabled gesture mask in the controller too. */
+			if (!value && tcm->sub_pwr_state >= SUB_PWR_EARLY_SUSPENDING &&
+					tcm->gesture_type) {
+				value = tcm->gesture_type;
+				data[4] = value & 0xff;
+				data[5] = (value >> 8) & 0xff;
+				LOGI("Keep gesture_type(0x%04x) during suspend\n", value);
+			}
+
 			tcm->gesture_type = 0x3FFF;
 			syna_dev_update_lpwg_status(tcm);
 			syna_sysfs_set_fingerprint_prepare(tcm);
 			LOGE("HBP set gesture_type(0x%04x)\n", tcm->gesture_type);
 		} else if (data[3] == DC_TOUCH_AND_HOLD) {
+			unsigned short value = (unsigned short)syna_pal_le2_to_uint(&data[4]);
+
+			if (!value && tcm->sub_pwr_state >= SUB_PWR_EARLY_SUSPENDING &&
+					tcm->touch_and_hold) {
+				value = tcm->touch_and_hold;
+				data[4] = value & 0xff;
+				data[5] = (value >> 8) & 0xff;
+				LOGI("Keep touch_and_hold(0x%04x) during suspend\n", value);
+			}
+
 			tcm->gesture_type = 0x3FFF;
-			tcm->touch_and_hold = (unsigned short)syna_pal_le2_to_uint(&data[4]);
+			tcm->touch_and_hold = value;
 			syna_dev_update_lpwg_status(tcm);
 			syna_sysfs_set_fingerprint_prepare(tcm);
 			LOGE("HBP set touch_and_hold(0x%04x)\n", tcm->touch_and_hold);

@@ -7,6 +7,7 @@ endif
 obj-y += ufcs/
 
 ccflags-y += -I$(srctree)/$(src)/include
+ccflags-y += -I$(srctree)/$(src)
 ccflags-y += -I$(srctree)/$(src)/../gauge_i2c_rst
 ccflags-y += -I$(srctree)/$(src)/../test-kit
 ccflags-y += -I$(srctree)/$(src)/../debug-kit

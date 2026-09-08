@@ -1,1 +1,1 @@
-../../../../sm8650-modules/oplus/kernel/touchpanel/kernelFwUpdate/kernelFwUpdate.h
+../../../sm8650-modules/oplus/kernel/touchpanel/kernelFwUpdate/kernelFwUpdate.h

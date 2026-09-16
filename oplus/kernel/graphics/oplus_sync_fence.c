@@ -432,7 +432,7 @@ static struct device_attribute sync_attr = {
 	.attr =
 		{
 			.name = DEVICE_NAME,
-			.mode = S_IRUGO | S_IWUGO, /*0666*/
+			.mode = 0664,
 		},
 	.show = NULL,
 	.store = NULL,

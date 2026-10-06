@@ -122,11 +122,11 @@ DT_OUTPUT_DIR="$OUT_DIR/arch/arm64/boot/dts/vendor"
 DT_BASE_DIR="$OUT_DIR/dtbs-base"
 DT_TECHPACK_DIR="$OUT_DIR/dtbs-techpack"
 DT_MERGED_DIR="$OUT_DIR/dtbs"
+DTC_CLO_DIR="$ROOT_DIR/scripts/dtc-clo"
+DTC_CLO_OUT="$OUT_DIR/host/dtc-clo"
+DTC_CLO_LIB_DIR="$DTC_CLO_OUT/libfdt"
 
-export PATH="$TC_DIR/bin:$ROOT_DIR/scripts/dtc/libfdt:$PATH"
-if [ -x "$ROOT_DIR/../oplus_kernel_platform/out/host/bin/fdtoverlaymerge" ]; then
-    export PATH="$ROOT_DIR/../oplus_kernel_platform/out/host/bin:$PATH"
-fi
+export PATH="$DTC_CLO_OUT:$TC_DIR/bin:$ROOT_DIR/scripts/dtc/libfdt:$PATH"
 
 msg() {
     echo -e "\e[1;32m$1\e[0m"
@@ -135,10 +135,43 @@ msg() {
 m() {
     make -j$(nproc --all) O="$OUT_DIR" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
         KERNEL_SRC="$ROOT_DIR" OUT_DIR="$OUT_DIR" \
-        DTC_EXT="$(command -v dtc)" \
+        DTC_EXT="$DTC_CLO_OUT/dtc" \
         DTC_OVERLAY_TEST_EXT="$ROOT_DIR/scripts/dtc/libfdt/ufdt_apply_overlay" \
         TARGET_PRODUCT=$TARGET TARGET_BOARD_PLATFORM=$PLATFORM \
         CONFIG_OPLUS_DEVICE_DTBS=y CONFIG_WAFFLE_DTB=y "$@" || exit $?
+}
+
+build_dtc_clo() {
+    msg "\nBuilding CLO device-tree tools...\n"
+
+    make -C "$DTC_CLO_DIR" \
+        OUT_DIR="$DTC_CLO_OUT" \
+        NO_PYTHON=1 \
+        PKG_CONFIG=false \
+        EXTRA_CFLAGS=-Wno-discarded-qualifiers \
+        LDFLAGS="-Wl,-rpath,$DTC_CLO_LIB_DIR" \
+        "$DTC_CLO_OUT/dtc" \
+        "$DTC_CLO_OUT/fdtget" \
+        "$DTC_CLO_OUT/fdtput" \
+        "$DTC_CLO_OUT/fdtoverlay" \
+        "$DTC_CLO_OUT/fdtoverlaymerge" || exit $?
+
+    local libfdt
+    libfdt="$(find "$DTC_CLO_LIB_DIR" -maxdepth 1 -type f -name 'libfdt-*.so' -print -quit)"
+    if [ -z "$libfdt" ]; then
+        echo "CLO libfdt shared library was not built in $DTC_CLO_LIB_DIR" >&2
+        exit 1
+    fi
+    # The standalone CLO Makefile creates this link relative to OUT_DIR,
+    # although the shared library is emitted below OUT_DIR/libfdt.
+    ln -sfn "$(basename "$libfdt")" "$DTC_CLO_LIB_DIR/libfdt.so.1"
+
+    for tool in dtc fdtget fdtput fdtoverlay fdtoverlaymerge; do
+        if [ ! -x "$DTC_CLO_OUT/$tool" ]; then
+            echo "CLO device-tree tool was not built: $DTC_CLO_OUT/$tool" >&2
+            exit 1
+        fi
+    done
 }
 
 clean_module_cmd_cache() {
@@ -157,6 +190,8 @@ $DO_CLEAN && {
     rm -rf "$OUT_DIR"
     echo "Cleaned output directories."
 }
+
+build_dtc_clo
 
 echo -e "Generating config...\n"
 mkdir -p "$OUT_DIR"

@@ -148,8 +148,9 @@ build_dtc_clo() {
         OUT_DIR="$DTC_CLO_OUT" \
         NO_PYTHON=1 \
         PKG_CONFIG=false \
-        EXTRA_CFLAGS=-Wno-discarded-qualifiers \
-        LDFLAGS="-Wl,-rpath,$DTC_CLO_LIB_DIR" \
+        CC="$TC_DIR/bin/clang" \
+        AR="$TC_DIR/bin/llvm-ar" \
+        LDFLAGS="-fuse-ld=lld -Wl,-rpath,$DTC_CLO_LIB_DIR" \
         "$DTC_CLO_OUT/dtc" \
         "$DTC_CLO_OUT/fdtget" \
         "$DTC_CLO_OUT/fdtput" \

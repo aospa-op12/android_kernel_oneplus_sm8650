@@ -7,3 +7,6 @@
 [submodule "scripts/dtc-clo"]
 	path = scripts/dtc-clo
 	url = https://github.com/aospa-op12/android_external_dtc
+[submodule "KernelSU-Next"]
+	path = KernelSU-Next
+	url = https://github.com/KernelSU-Next/KernelSU-Next

@@ -1,3 +1,6 @@
 [submodule "sm8650-devicetrees"]
 	path = sm8650-devicetrees
 	url = https://github.com/aospa-op12/android_kernel_oneplus_sm8650-devicetrees
+[submodule "sm8650-modules"]
+	path = sm8650-modules
+	url = https://github.com/aospa-op12/android_kernel_oneplus_sm8650-modules

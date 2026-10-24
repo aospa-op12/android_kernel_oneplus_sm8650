@@ -1,1 +1,1 @@
-../../../../sm8650-modules/oplus/kernel/device_info/device_info/device_info.h
+../../../sm8650-modules/oplus/kernel/device_info/device_info/device_info.h

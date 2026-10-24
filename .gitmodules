@@ -4,3 +4,6 @@
 [submodule "sm8650-modules"]
 	path = sm8650-modules
 	url = https://github.com/aospa-op12/android_kernel_oneplus_sm8650-modules
+[submodule "scripts/dtc-clo"]
+	path = scripts/dtc-clo
+	url = https://github.com/aospa-op12/android_external_dtc

@@ -1,1 +1,1 @@
-../../../sm8650-modules/oplus/kernel/device_info/pogo_keyboard/pogo_common.h
+../../sm8650-modules/oplus/kernel/device_info/pogo_keyboard/pogo_common.h

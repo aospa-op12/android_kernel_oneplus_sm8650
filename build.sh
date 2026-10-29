@@ -11,11 +11,12 @@ TC_DIR="/mnt/data/android/calcite/prebuilts/clang-standalone"
 OUT_DIR="$ROOT_DIR/out"
 
 DO_CLEAN=false
+GKI_ONLY=false
 TARGET=waffle
 PLATFORM=pineapple
 
 if (( $# == 0 )); then
-    echo "Usage: $0 <device-kernel-directory> [--clean]" >&2
+    echo "Usage: $0 <device-kernel-directory> [--clean] [--gki-only]" >&2
     exit 2
 fi
 
@@ -30,13 +31,14 @@ DEVICE_KERNEL_DIR="$(cd -- "$DEVICE_KERNEL_DIR" && pwd -P)"
 while (( $# > 0 )); do
     case "$1" in
         -c|--clean) DO_CLEAN=true ;;
+        --gki-only) GKI_ONLY=true ;;
         -h|--help)
-            echo "Usage: $0 <device-kernel-directory> [--clean]"
+            echo "Usage: $0 <device-kernel-directory> [--clean] [--gki-only]"
             exit 0
             ;;
         *)
             echo "Unknown argument: $1" >&2
-            echo "Usage: $0 <device-kernel-directory> [--clean]" >&2
+            echo "Usage: $0 <device-kernel-directory> [--clean] [--gki-only]" >&2
             exit 2
             ;;
     esac
@@ -193,7 +195,9 @@ $DO_CLEAN && {
     echo "Cleaned output directories."
 }
 
-build_dtc_clo
+if ! $GKI_ONLY; then
+    build_dtc_clo
+fi
 
 echo -e "Generating config...\n"
 mkdir -p "$OUT_DIR"
@@ -206,11 +210,16 @@ m olddefconfig
 msg "\nBuilding kernel...\n"
 # The DT output tree is generated data.  Clear it before dtbs so that files
 # from another product or an older configuration cannot enter the merge.
-rm -rf "$DT_OUTPUT_DIR"
-m Image modules dtbs 2> >(tee "$OUT_DIR/error.log" >&2)
+if $GKI_ONLY; then
+    m Image modules 2> >(tee "$OUT_DIR/error.log" >&2)
+else
+    rm -rf "$DT_OUTPUT_DIR"
+    m Image modules dtbs 2> >(tee "$OUT_DIR/error.log" >&2)
+fi
 rm -rf "$OUT_DIR/modules" "$OUT_DIR"/*.ko
 m INSTALL_MOD_PATH=modules INSTALL_MOD_STRIP=1 modules_install 2> >(tee "$OUT_DIR/error.log" >&2)
 
+if ! $GKI_ONLY; then
 msg "\nBuilding techpack modules..."
 for module in $MODULES; do
     msg "\nBuilding $module..."
@@ -258,6 +267,210 @@ for module_rel in $OPLUS_MODULES; do
         INSTALL_MOD_PATH=modules INSTALL_MOD_STRIP=1 modules_install \
         2> >(tee "$OUT_DIR/error.log" >&2)
 done
+
+fi
+
+module_source_for() {
+    local module_name="$1"
+    local extra_module
+
+    # Keep module selection identical to the normal system/vendor export.
+    extra_module="$(find "$MODULES_ROOT/extra" -type f -name "$module_name" \
+        -printf '%P\n' -quit 2>/dev/null)"
+    if [ -n "$extra_module" ]; then
+        printf 'extra/%s\n' "$extra_module"
+        return 0
+    fi
+
+    awk -F: -v module="$module_name" '
+        { path = $1; name = path; sub(/^.*\//, "", name); if (name == module) { print path; exit } }
+    ' "$MODULES_ROOT/modules.dep"
+}
+
+copy_module_list() {
+    local list_file="$1"
+    local destination="$2"
+    local module_name module_path
+    while IFS= read -r module_name; do
+        [ -n "$module_name" ] || continue
+        module_path="$(module_source_for "$module_name")"
+        if [ -z "$module_path" ] || [ ! -f "$MODULES_ROOT/$module_path" ]; then
+            echo "Missing module listed in $list_file: $module_name" >&2
+            exit 1
+        fi
+        cp "$MODULES_ROOT/$module_path" "$destination/$module_name"
+    done < "$ROOT_DIR/$list_file"
+}
+
+prepare_depmod_tree() {
+    local list_file="$1"
+    local stage_dir="$2"
+    local module_name module_path
+    mkdir -p "$stage_dir/lib/modules/$KERNEL_RELEASE"
+    while IFS= read -r module_name; do
+        [ -n "$module_name" ] || continue
+        module_path="$(module_source_for "$module_name")"
+        if [ -z "$module_path" ] || [ ! -f "$MODULES_ROOT/$module_path" ]; then
+            echo "Missing module for depmod: $module_name" >&2
+            exit 1
+        fi
+        cp "$MODULES_ROOT/$module_path" "$stage_dir/lib/modules/$KERNEL_RELEASE/$module_name"
+    done < "$list_file"
+    : > "$stage_dir/lib/modules/$KERNEL_RELEASE/modules.order"
+    : > "$stage_dir/lib/modules/$KERNEL_RELEASE/modules.builtin"
+    : > "$stage_dir/lib/modules/$KERNEL_RELEASE/modules.builtin.modinfo"
+    depmod -b "$stage_dir" "$KERNEL_RELEASE"
+}
+
+rewrite_depmod_paths() {
+    local input="$1"
+    local output="$2"
+    local partition="$3"
+    awk -v mode="$partition" -v krel="${SYSTEM_MODULES_RELEASE:-android14-6.1}" '
+        BEGIN {
+            while ((getline module < "'"$ROOT_DIR"'/modules.system_dlkm.list.msm.pineapple") > 0)
+                system_modules[module] = 1
+            close("'"$ROOT_DIR"'/modules.system_dlkm.list.msm.pineapple")
+        }
+        function name(path) { sub(/^.*\//, "", path); return path }
+        function prefix(module) {
+            if (mode == "system") return "/system_dlkm/lib/modules/" krel
+            if (mode == "ramdisk") return "/lib/modules"
+            if (system_modules[module]) return "/system_dlkm/lib/modules/" krel
+            return "/vendor_dlkm/lib/modules"
+        }
+        {
+            module = name($1)
+            sub(/:$/, "", module)
+            line = prefix(module) "/" module ":"
+            for (i = 2; i <= NF; i++) {
+                dependency = name($i)
+                line = line " " prefix(dependency) "/" dependency
+            }
+            print line
+        }
+    ' "$input" > "$output"
+}
+
+if $GKI_ONLY; then
+    msg "\nKernel and GKI modules compiled successfully.\n"
+
+    msg "Installing kernel headers\n"
+    m headers_install
+    sigaction_header="$OUT_DIR/usr/include/asm-generic/signal.h"
+    if [ ! -f "$sigaction_header" ]; then
+        echo "Missing exported header: $sigaction_header" >&2
+        exit 1
+    fi
+    if ! grep -q '^struct __kernel_sigaction {' "$sigaction_header"; then
+        sed -i 's/^struct sigaction {/struct __kernel_sigaction {/' "$sigaction_header" || exit $?
+    fi
+    if ! grep -q '^struct __kernel_sigaction {' "$sigaction_header"; then
+        echo "Failed to rename sigaction in $sigaction_header" >&2
+        exit 1
+    fi
+
+    if [ ! -f "$OUT_DIR/include/config/kernel.release" ]; then
+        echo "Missing kernel.release: $OUT_DIR/include/config/kernel.release" >&2
+        exit 1
+    fi
+    KERNEL_RELEASE="$(<"$OUT_DIR/include/config/kernel.release")"
+    MODULES_ROOT="$OUT_DIR/modules/lib/modules/$KERNEL_RELEASE"
+    GKI_MODULE_LIST="$ROOT_DIR/modules.system_dlkm.list.msm.pineapple"
+    if [ ! -d "$MODULES_ROOT" ]; then
+        echo "Missing installed modules: $MODULES_ROOT" >&2
+        exit 1
+    fi
+    if [ ! -f "$GKI_MODULE_LIST" ]; then
+        echo "Missing GKI module list: $GKI_MODULE_LIST" >&2
+        exit 1
+    fi
+
+    # Keep GKI module signatures consistent with the normal export path.
+    sign_file="$OUT_DIR/scripts/sign-file"
+    signing_key="$OUT_DIR/certs/signing_key.pem"
+    signing_cert="$OUT_DIR/certs/signing_key.x509"
+    hash_algo="$(sed -n 's/^CONFIG_MODULE_SIG_HASH="\{0,1\}\([^" ]*\)"\{0,1\}$/\1/p' "$OUT_DIR/.config")"
+    if [ -z "$hash_algo" ] || [ ! -x "$sign_file" ] || [ ! -f "$signing_key" ] || [ ! -f "$signing_cert" ]; then
+        echo "Missing kernel module signing tools, keys, or hash configuration" >&2
+        exit 1
+    fi
+    signed_count=0
+    while IFS= read -r module_name; do
+        [ -n "$module_name" ] || continue
+        module_path="$(module_source_for "$module_name")"
+        if [ -z "$module_path" ] || [ ! -f "$MODULES_ROOT/$module_path" ]; then
+            echo "Missing installed GKI module: $module_name" >&2
+            exit 1
+        fi
+        if tail -c 28 "$MODULES_ROOT/$module_path" | grep -Fqx '~Module signature appended~'; then
+            continue
+        fi
+        "$sign_file" "$hash_algo" "$signing_key" "$signing_cert" \
+            "$MODULES_ROOT/$module_path" || exit $?
+        signed_count=$((signed_count + 1))
+    done < "$GKI_MODULE_LIST"
+    msg "Signed $signed_count installed GKI module files"
+
+    # Export incrementally.  Existing files in the device directory are kept;
+    # only artifacts produced by this GKI build are overwritten.
+    GKI_EXPORT_DIR="$OUT_DIR/export-gki"
+    GKI_SYSTEM_DIR="$GKI_EXPORT_DIR/system_dlkm/lib/modules/android14-6.1"
+    # This is a private staging directory for this mode, so stale generated
+    # files from an earlier run must not leak into the next export.
+    rm -rf "$GKI_EXPORT_DIR"
+    mkdir -p "$GKI_SYSTEM_DIR" "$GKI_EXPORT_DIR/kernel-headers"
+    cp "$OUT_DIR/arch/arm64/boot/Image" "$GKI_EXPORT_DIR/Image"
+    # This symbol table intentionally contains only the kernel and in-tree GKI
+    # module symbols; skipped vendor modules cannot contribute external ones.
+    cp "$OUT_DIR/Module.symvers" "$GKI_EXPORT_DIR/Module.symvers"
+    cp "$OUT_DIR/System.map" "$GKI_EXPORT_DIR/System.map"
+    cp -a "$OUT_DIR/usr/include/." "$GKI_EXPORT_DIR/kernel-headers/"
+    # audio-kernel exports UAPI headers below include/audio/, while the
+    # device kernel header layout expects them directly under kernel-headers/.
+    if [ -d "$GKI_EXPORT_DIR/kernel-headers/audio" ]; then
+        cp -a "$GKI_EXPORT_DIR/kernel-headers/audio/." \
+            "$GKI_EXPORT_DIR/kernel-headers/"
+        rm -rf "$GKI_EXPORT_DIR/kernel-headers/audio"
+    fi
+    # The qcom dlkm flow consumes selected module files directly.  Generate
+    # only the depmod metadata needed by system_dlkm below.
+    while IFS= read -r module_name; do
+        [ -n "$module_name" ] || continue
+        module_path="$(module_source_for "$module_name")"
+        if [ -z "$module_path" ] || [ ! -f "$MODULES_ROOT/$module_path" ]; then
+            echo "Missing installed GKI module: $module_name" >&2
+            exit 1
+        fi
+        cp "$MODULES_ROOT/$module_path" "$GKI_SYSTEM_DIR/$module_name"
+    done < "$GKI_MODULE_LIST"
+    GKI_STAGE="$GKI_EXPORT_DIR/.depmod-gki"
+    prepare_depmod_tree "$GKI_MODULE_LIST" "$GKI_STAGE"
+    cp "$GKI_STAGE/lib/modules/$KERNEL_RELEASE/modules.alias" "$GKI_SYSTEM_DIR/modules.alias"
+    cp "$GKI_STAGE/lib/modules/$KERNEL_RELEASE/modules.softdep" "$GKI_SYSTEM_DIR/modules.softdep"
+    rewrite_depmod_paths \
+        "$GKI_STAGE/lib/modules/$KERNEL_RELEASE/modules.dep" \
+        "$GKI_SYSTEM_DIR/modules.dep" system
+    cp "$GKI_MODULE_LIST" "$GKI_SYSTEM_DIR/modules.load"
+    rm -rf "$GKI_STAGE"
+    find "$GKI_EXPORT_DIR" -type f -name '*.cmd' -delete
+
+    if [ ! -f "$DEVICE_KERNEL_DIR/Android.bp" ]; then
+        echo "Missing Android.bp in $DEVICE_KERNEL_DIR" >&2
+        exit 1
+    fi
+    target_system_dir="$DEVICE_KERNEL_DIR/system_dlkm/lib/modules/android14-6.1"
+    # Remove only artifacts previously generated by this GKI-only export.
+    rm -rf "$target_system_dir/kernel"
+    find "$target_system_dir" -maxdepth 1 -type f -name 'modules.*' -delete
+    find "$target_system_dir" -maxdepth 1 -type f -name '*.ko' -delete
+    rm -rf "$DEVICE_KERNEL_DIR/kernel-headers/audio"
+    find "$target_system_dir" "$DEVICE_KERNEL_DIR/kernel-headers" \
+        -type f -name '*.cmd' -delete 2>/dev/null
+    cp -a "$GKI_EXPORT_DIR/." "$DEVICE_KERNEL_DIR/"
+    msg "Exported GKI kernel release $KERNEL_RELEASE (output preserved)"
+    exit 0
+fi
 
 msg "\nKernel compiled succesfully!\nMerging dtb's...\n"
 
@@ -434,41 +647,6 @@ fi
 python3 "$ROOT_DIR/mkdtboimg.py" create "$EXPORT_DIR/dtbs/dtbo.img" \
     --page_size=4096 "${dtbo_inputs[@]}"
 
-module_source_for() {
-    local module_name="$1"
-    local extra_module
-
-    # Some Oplus drivers are present both in the in-tree vendor tree and as
-    # separately built external modules.  depmod keeps only one entry for a
-    # duplicate module name; prefer the external `extra/` copy because that is
-    # the module variant referenced by the vendor/recovery module lists.
-    extra_module="$(find "$MODULES_ROOT/extra" -type f -name "$module_name" \
-        -printf '%P\n' -quit 2>/dev/null)"
-    if [ -n "$extra_module" ]; then
-        printf 'extra/%s\n' "$extra_module"
-        return 0
-    fi
-
-    awk -F: -v module="$module_name" '
-        { path = $1; name = path; sub(/^.*\//, "", name); if (name == module) { print path; exit } }
-    ' "$MODULES_ROOT/modules.dep"
-}
-
-copy_module_list() {
-    local list_file="$1"
-    local destination="$2"
-    local module_name module_path
-    while IFS= read -r module_name; do
-        [ -n "$module_name" ] || continue
-        module_path="$(module_source_for "$module_name")"
-        if [ -z "$module_path" ] || [ ! -f "$MODULES_ROOT/$module_path" ]; then
-            echo "Missing module listed in $list_file: $module_name" >&2
-            exit 1
-        fi
-        cp "$MODULES_ROOT/$module_path" "$destination/$module_name"
-    done < "$ROOT_DIR/$list_file"
-}
-
 all_module_names="$EXPORT_DIR/.all-modules"
 awk -F: '{ path = $1; sub(/^.*\//, "", path); print path }' "$MODULES_ROOT/modules.dep" > "$all_module_names"
 exported_module_count="$(wc -l < "$all_module_names")"
@@ -485,56 +663,6 @@ while IFS= read -r module_name; do
 done < "$all_module_names"
 copy_module_list modules.recovery.list.msm.pineapple "$RAMDISK_DIR"
 copy_module_list modules.recovery.list.oplus.pineapple "$RAMDISK_DIR"
-
-prepare_depmod_tree() {
-    local list_file="$1"
-    local stage_dir="$2"
-    local module_name module_path
-    mkdir -p "$stage_dir/lib/modules/$KERNEL_RELEASE"
-    while IFS= read -r module_name; do
-        [ -n "$module_name" ] || continue
-        module_path="$(module_source_for "$module_name")"
-        if [ -z "$module_path" ] || [ ! -f "$MODULES_ROOT/$module_path" ]; then
-            echo "Missing module for depmod: $module_name" >&2
-            exit 1
-        fi
-        cp "$MODULES_ROOT/$module_path" "$stage_dir/lib/modules/$KERNEL_RELEASE/$module_name"
-    done < "$list_file"
-    : > "$stage_dir/lib/modules/$KERNEL_RELEASE/modules.order"
-    : > "$stage_dir/lib/modules/$KERNEL_RELEASE/modules.builtin"
-    : > "$stage_dir/lib/modules/$KERNEL_RELEASE/modules.builtin.modinfo"
-    depmod -b "$stage_dir" "$KERNEL_RELEASE"
-}
-
-rewrite_depmod_paths() {
-    local input="$1"
-    local output="$2"
-    local partition="$3"
-    awk -v mode="$partition" -v krel="$SYSTEM_MODULES_RELEASE" '
-        BEGIN {
-            while ((getline module < "'"$ROOT_DIR"'/modules.system_dlkm.list.msm.pineapple") > 0)
-                system_modules[module] = 1
-            close("'"$ROOT_DIR"'/modules.system_dlkm.list.msm.pineapple")
-        }
-        function name(path) { sub(/^.*\//, "", path); return path }
-        function prefix(module) {
-            if (mode == "system") return "/system_dlkm/lib/modules/" krel
-            if (mode == "ramdisk") return "/lib/modules"
-            if (system_modules[module]) return "/system_dlkm/lib/modules/" krel
-            return "/vendor_dlkm/lib/modules"
-        }
-        {
-            module = name($1)
-            sub(/:$/, "", module)
-            line = prefix(module) "/" module ":"
-            for (i = 2; i <= NF; i++) {
-                dependency = name($i)
-                line = line " " prefix(dependency) "/" dependency
-            }
-            print line
-        }
-    ' "$input" > "$output"
-}
 
 system_stage="$EXPORT_DIR/.depmod-system"
 vendor_stage="$EXPORT_DIR/.depmod-vendor"
